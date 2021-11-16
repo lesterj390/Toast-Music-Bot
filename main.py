@@ -9,8 +9,6 @@ import asyncio
 from apikeys import *
 
 
-# example playlist = 'https://www.youtube.com/playlist?list=PLSXSvMgBtiIMZxCPYc7ahT9omTyFnGXL3'
-
 def GetPlaylistUrls(url: str):
     query = parse_qs(urlparse(url).query, keep_blank_values=True)
     playlist_id = query["list"][0]
@@ -184,6 +182,21 @@ async def play(ctx, *args: str):
     else:
         await ctx.send("You're not in a voice channel ya goof")
 
+@client.command(pass_context=True)
+async def pause(ctx):
+    tempPlayer = discord.utils.get(client.voice_clients, guild=ctx.guild)
+    if tempPlayer.is_playing():
+        tempPlayer.pause()
+    else:
+        await ctx.send("There's nothing playing rn ya goof!")
+
+@client.command(pass_context=True)
+async def resume(ctx):
+    tempPlayer = discord.utils.get(client.voice_clients, guild=ctx.guild)
+    if tempPlayer.is_paused():
+        tempPlayer.resume()
+    else:
+        await ctx.send("I'm already playing ya goof!")
 
 @client.command(pass_context=True)
 async def leave(ctx):
