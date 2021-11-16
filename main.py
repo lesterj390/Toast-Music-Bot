@@ -64,12 +64,43 @@ async def on_ready():
     print("----------------------------")
 
 
+@client.event
+async def on_message(message):
+    global serverData
+
+    guildID = message.channel.guild.id
+    messageChatID = message.channel.id
+    toastChatID = int(GetChatID(serverData, guildID))
+
+    # Testing for commands in custom channel
+    if messageChatID == toastChatID:
+        # Adding prefix to message
+        message.content = f"t{message.content}"
+        # Removing message
+        await message.channel.purge(limit = 1)
+
+    await client.process_commands(message)
+
+
 @client.command()
 async def hello(ctx):
+    """
+    Says hello.
+
+    :param ctx:
+    :return:
+    """
+
     await ctx.send("hello, I am toast bot")
 
 
 def GetUrl(song: str):
+    """
+    Returns info including the url of a given song title / link.
+
+    :param song:
+    :return:
+    """
     info = ""
 
     if "watch?v" in song:
@@ -97,6 +128,14 @@ def GetUrl(song: str):
 
 @client.command(pass_context=True)
 async def next(ctx=""):
+    """
+    Plays the next song whether the command is called internally or
+    from chat and updates the queue accordingly.
+
+    :param ctx:
+    :return:
+    """
+
     global queue
     global voice
 
@@ -113,6 +152,14 @@ async def next(ctx=""):
 
 
 async def StartSong(currentSong):
+    """
+    Starts a song based on the currentSong parameter. If the given song is a playlist link,
+    It calls "StartPlaylistSong".
+
+    :param currentSong:
+    :return:
+    """
+
     global voice
 
     if type(currentSong) == type({'a': 'b'}):
@@ -128,7 +175,15 @@ async def StartSong(currentSong):
     else:
         await StartPlaylistSong(currentSong)
 
+
 async def StartPlaylistSong(song: str):
+    """
+    Starts a song from a url. This is only used for playlist songs.
+
+    :param song:
+    :return:
+    """
+
     global voice
 
     currentSong = GetUrl(song)
@@ -145,6 +200,14 @@ async def StartPlaylistSong(song: str):
 
 @client.command(pass_context=True)
 async def play(ctx, *args: str):
+    """
+    Plays a song based on song arguments (link, title, playlist link).
+
+    :param ctx:
+    :param args:
+    :return:
+    """
+
     global voice
     global queue
 
@@ -182,37 +245,77 @@ async def play(ctx, *args: str):
     else:
         await ctx.send("You're not in a voice channel ya goof")
 
+
 @client.command(pass_context=True)
 async def pause(ctx):
+    """
+    Pauses currently playing song.
+
+    :param ctx:
+    :return:
+    """
+
     tempPlayer = discord.utils.get(client.voice_clients, guild=ctx.guild)
     if tempPlayer.is_playing():
         tempPlayer.pause()
     else:
         await ctx.send("There's nothing playing rn ya goof!")
 
+
 @client.command(pass_context=True)
 async def resume(ctx):
+    """
+    Resumes a currently playing song.
+
+    :param ctx:
+    :return:
+    """
+
     tempPlayer = discord.utils.get(client.voice_clients, guild=ctx.guild)
     if tempPlayer.is_paused():
         tempPlayer.resume()
     else:
         await ctx.send("I'm already playing ya goof!")
 
+
 @client.command(pass_context=True)
 async def clear(ctx):
+    """
+    Clears the queue.
+
+    :param ctx:
+    :return:
+    """
+
     global queue
     for x in range(1, len(queue)):
         queue.pop(1)
 
+
 @client.command(pass_context=True)
 async def leave(ctx):
+    """
+    Removes the bot from the server.
+
+    :param ctx:
+    :return:
+    """
+
     if ctx.voice_client:
         await ctx.guild.voice_client.disconnect()
         queue = []
     else:
         await ctx.send("I'm not in a voice channel ya goof")
 
+
 def IsSetup(guildID):
+    """
+    Checks if a given server has used the "setup" command.
+
+    :param guildID:
+    :return:
+    """
+
     global serverData
 
     if serverData == False:
@@ -226,8 +329,16 @@ def IsSetup(guildID):
 
         return False
 
+
 @client.command(pass_context=True)
 async def setup(ctx):
+    """
+    Sets up the toast prefixless text channel.
+
+    :param ctx:
+    :return:
+    """
+
     global serverData
 
     serverData = GetServerInfo()
@@ -256,8 +367,17 @@ async def setup(ctx):
         serverData.append(server)
         SaveServerInfo(serverData)
 
+
 @client.command(pass_context=True)
 async def shuffle(ctx, playlistLink = ""):
+    """
+    Shuffles the queue or plays shuffles a given playlist and adds it to queue.
+
+    :param ctx:
+    :param playlistLink:
+    :return:
+    """
+
     global queue
     global voice
 
@@ -283,5 +403,14 @@ async def shuffle(ctx, playlistLink = ""):
         for x in range(0, len(tempqueue)):
             queue.pop(1)
             queue.insert(1, tempqueue[x])
+
+
+@client.command(pass_context=True)
+async def burger(ctx):
+    await ctx.send("🍞")
+    await ctx.send("🍅")
+    await ctx.send("🥬")
+    await ctx.send("🥩")
+    await ctx.send("🍞")
 
 client.run(BOTTOKEN)
