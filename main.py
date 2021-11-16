@@ -6,6 +6,8 @@ from discord import FFmpegPCMAudio
 import youtube_dl
 import asyncio
 
+from apikeys import *
+
 
 # example playlist = 'https://www.youtube.com/playlist?list=PLSXSvMgBtiIMZxCPYc7ahT9omTyFnGXL3'
 
@@ -14,7 +16,7 @@ def GetPlaylistUrls(url: str):
     playlist_id = query["list"][0]
     #
     # print(f'get all playlist items links from {playlist_id}')
-    youtube = googleapiclient.discovery.build("youtube", "v3", developerKey="AIzaSyAXw2am0_BDG2v85kkjpKKDI2HfK6YhSJM")
+    youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=YTDEVKEY)
 
     request = youtube.playlistItems().list(
         part="snippet",
@@ -192,4 +194,4 @@ async def leave(ctx):
         await ctx.send("I'm not in a voice channel ya goof")
 
 
-client.run("OTA2NzYzMTQwNzQ4OTU5Nzc0.YYdW-w.V32tYXU-OuAdKSeFWpaBAuxw6NQ")
+client.run(BOTTOKEN)
