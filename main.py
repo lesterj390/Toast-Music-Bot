@@ -5,15 +5,15 @@ from discord.ext import commands
 from discord import FFmpegPCMAudio
 import youtube_dl
 import asyncio
+import random
 
 from apikeys import *
+from dataMangement import *
 
 
 def GetPlaylistUrls(url: str):
     query = parse_qs(urlparse(url).query, keep_blank_values=True)
     playlist_id = query["list"][0]
-    #
-    # print(f'get all playlist items links from {playlist_id}')
     youtube = googleapiclient.discovery.build("youtube", "v3", developerKey=YTDEVKEY)
 
     request = youtube.playlistItems().list(
@@ -29,8 +29,6 @@ def GetPlaylistUrls(url: str):
         playlist_items += response["items"]
         request = youtube.playlistItems().list_next(request, response)
 
-    # print(f"total: {len(playlist_items)}")
-
     for t in range(0, len(playlist_items)):
         playlist_items[t] = "https://www.youtube.com/watch?v=" + playlist_items[t]["snippet"]["resourceId"]["videoId"]
 
@@ -40,6 +38,8 @@ def GetPlaylistUrls(url: str):
 client = commands.Bot(command_prefix='t')
 
 queue = []
+
+serverData = GetServerInfo()
 
 voice = ""
 
@@ -199,6 +199,12 @@ async def resume(ctx):
         await ctx.send("I'm already playing ya goof!")
 
 @client.command(pass_context=True)
+async def clear(ctx):
+    global queue
+    for x in range(1, len(queue)):
+        queue.pop(1)
+
+@client.command(pass_context=True)
 async def leave(ctx):
     if ctx.voice_client:
         await ctx.guild.voice_client.disconnect()
@@ -206,5 +212,76 @@ async def leave(ctx):
     else:
         await ctx.send("I'm not in a voice channel ya goof")
 
+def IsSetup(guildID):
+    global serverData
+
+    if serverData == False:
+        print("im not an array")
+        return False
+
+    else:
+        for x in serverData:
+            if x['guildID'] == f'{guildID}':
+                return True
+
+        return False
+
+@client.command(pass_context=True)
+async def setup(ctx):
+    global serverData
+
+    serverData = GetServerInfo()
+
+    server = {}
+    guildID = ctx.message.guild.id
+
+    if (IsSetup(guildID)):
+        savedChatID = GetChatID(serverData, guildID)
+        tempChannel = client.get_channel(int(savedChatID))
+        if (tempChannel == None):
+            channel = await ctx.guild.create_text_channel(name='🍞')
+            UpdateChatID(serverData, guildID, channel.id)
+            SaveServerInfo(serverData)
+        else:
+            await ctx.send("The chat is already setup ya goof!")
+
+    else:
+        channel = await ctx.guild.create_text_channel(name='🍞')
+        server['guildID'] = f'{guildID}'
+        server['chatID'] = f'{channel.id}'
+
+        if (type(serverData) != type([])):
+            serverData = []
+
+        serverData.append(server)
+        SaveServerInfo(serverData)
+
+@client.command(pass_context=True)
+async def shuffle(ctx, playlistLink = ""):
+    global queue
+    global voice
+
+    if ctx.author.voice:
+        channel = ctx.message.author.voice.channel
+        if not ctx.voice_client:
+            voice = await channel.connect()
+
+    if playlistLink != "":
+        playlist = GetPlaylistUrls(playlistLink)
+        random.shuffle(playlist)
+
+        for x in playlist:
+            queue.append(x)
+
+        if len(playlist) == len(queue):
+            await StartSong(queue[0])
+
+    else:
+        tempqueue = queue[1:]
+        random.shuffle(tempqueue)
+
+        for x in range(0, len(tempqueue)):
+            queue.pop(1)
+            queue.insert(1, tempqueue[x])
 
 client.run(BOTTOKEN)
