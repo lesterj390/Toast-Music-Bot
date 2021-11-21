@@ -90,6 +90,8 @@ currentGuildID = 0
 
 updateTPlayer = False
 
+commandList = ["hello", "next", "play", "pause", "resume", "clear", "leave", "shuffle", "remove", "t"]
+
 voice = ""
 
 ydl_param = {
@@ -119,6 +121,7 @@ async def on_ready():
 async def on_message(message):
     global serverData
     global currentGuildID
+    global commandList
 
     global queue
 
@@ -129,7 +132,8 @@ async def on_message(message):
     # Testing for commands in custom channel
     if messageChatID == toastChatID and message.author.id != TOASTBOTID:
         # Adding prefix to message
-        message.content = f"t{message.content}"
+        if not message.content.startswith(tuple(commandList)):
+            message.content = f"tplay {message.content}"
         # Removing message
         await message.channel.purge(limit=1)
 
