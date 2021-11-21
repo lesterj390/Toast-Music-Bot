@@ -204,10 +204,15 @@ async def toastPlayerCheck():
 
     while True:
         if updateTPlayer:
-            title = GetYTVidTitle(queue[0])
-            qtitles = GetQueue()
             chatID = GetChatID(serverData, currentGuildID)
-            await UpdateToastPlayer(title, qtitles, chatID)
+            if len(queue) > 0:
+                title = GetYTVidTitle(queue[0])
+                qtitles = GetQueue()
+                await UpdateToastPlayer(title, qtitles, chatID)
+            else:
+                channel = client.get_channel(chatID)
+                await channel.purge(limit=1)
+
             updateTPlayer = False
 
         await asyncio.sleep(1)
@@ -248,6 +253,7 @@ def next_song():
     elif len(queue) == 1:
         voice.stop()
         queue.pop(0)
+        updateTPlayer = True
 
 
 async def StartSong(ytlink):
