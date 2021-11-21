@@ -90,7 +90,7 @@ currentGuildID = 0
 
 updateTPlayer = False
 
-commandList = ["hello", "next", "play", "pause", "resume", "clear", "leave", "shuffle", "remove"]
+commandList = ["hello", "next", "play", "pause", "resume", "clear", "leave", "shuffle", "remove", "swap"]
 
 voice = ""
 
@@ -535,6 +535,17 @@ async def remove(ctx, index):
         updateTPlayer = True
     except:
         ctx.send("That number is not in the queue ya goof!")
+
+@client.command(pass_context=True)
+async def swap(ctx, index1 : int, index2 : int):
+    global queue
+    global updateTPlayer
+
+    try:
+        queue[index1], queue[index2] = queue[index2], queue[index1]
+        updateTPlayer = True
+    except:
+        ctx.send("I can't swap those ya goof!")
 
 
 @client.command(pass_context=True)
