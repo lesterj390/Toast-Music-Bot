@@ -19,7 +19,7 @@ except:
 
 try:
     from boto.s3.connection import S3Connection
-    s3 = S3Connection(os.environ['S3_KEY'], os.environ['S3_SECRET'])
+    s3 = S3Connection(os.environ['YTDEVKEY'], os.environ['BOTTOKEN'])
 
     YTDEVKEY = os.environ['YTDEVKEY']
     BOTTOKEN = os.environ['BOTTOKEN']
