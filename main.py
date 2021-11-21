@@ -90,7 +90,7 @@ currentGuildID = 0
 
 updateTPlayer = False
 
-commandList = ["hello", "next", "play", "pause", "resume", "clear", "leave", "shuffle", "remove", "t"]
+commandList = ["hello", "next", "play", "pause", "resume", "clear", "leave", "shuffle", "remove"]
 
 voice = ""
 
@@ -134,7 +134,8 @@ async def on_message(message):
         # Adding prefix to message
         if not message.content.startswith(tuple(commandList)):
             message.content = f"tplay {message.content}"
-        # Removing message
+        elif not message.content.startswith("t"):
+            message.content = f"t{message.content}"
         await message.channel.purge(limit=1)
 
     await client.process_commands(message)
