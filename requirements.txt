@@ -1,6 +1,7 @@
 aiohttp==3.7.4.post0
 async-timeout==3.0.1
 attrs==21.2.0
+boto==2.49.0
 cachetools==4.2.4
 certifi==2021.10.8
 cffi==1.15.0

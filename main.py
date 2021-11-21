@@ -8,9 +8,23 @@ from discord import FFmpegPCMAudio
 import youtube_dl
 import random
 
-from apikeys import *
 from dataMangement import *
 
+import os
+
+try:
+    from apikeys import *
+except:
+    pass
+
+try:
+    from boto.s3.connection import S3Connection
+    s3 = S3Connection(os.environ['S3_KEY'], os.environ['S3_SECRET'])
+
+    YTDEVKEY = os.environ['YTDEVKEY']
+    BOTTOKEN = os.environ['BOTTOKEN']
+except:
+    pass
 
 def GetPlaylistUrls(url: str):
     query = parse_qs(urlparse(url).query, keep_blank_values=True)
