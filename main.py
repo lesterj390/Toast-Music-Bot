@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 from googleapiclient.discovery import build
 from urllib.parse import parse_qs, urlparse
@@ -64,7 +65,10 @@ def GetYTVidTitle(url: str):
 
     response = request.execute()
 
-    return response['items'][0]['snippet']['title']
+    try:
+        return response['items'][0]['snippet']['title']
+    except:
+        return "Title Error"
 
 
 def GetYTVidUrl(search: str):
@@ -187,7 +191,6 @@ def GetUrl(song: str):
             'link': info['formats'][0]['url'],
             'title': info['title']
         }
-        # return info['formats'][0]['url']
 
     else:
         return False
@@ -196,11 +199,9 @@ def GetUrl(song: str):
 def GetQueue(guildID):
     global queues
 
-    global currentGuildID
-
     queueString = "Queue:\n"
 
-    if len(range(1, len(queues[guildID]))) >= 10:
+    if (len(queues[guildID]) -1) >= 10:
         for x in range(1, 11):
             queueString += f"{x}. {GetYTVidTitle(queues[guildID][x])}\n"
 
@@ -208,7 +209,7 @@ def GetQueue(guildID):
         for x in range(1, len(queues[guildID])):
             queueString += f"{x}. {GetYTVidTitle(queues[guildID][x])}\n"
 
-    if len(range(1, len(queues[guildID]))) > 10:
+    if (len(queues[guildID]) -1) > 10:
         queueString += f"...\n"
 
     return (queueString)
@@ -285,11 +286,16 @@ def next_song(guildID):
     if len(queues[guildID]) > 1:
         queues[guildID].pop(0)
 
-        playableLink = GetUrl(queues[guildID][0])['link']
+        playableLink = GetUrl(queues[guildID][0])
 
-        source = FFmpegPCMAudio(playableLink, **ffmpeg_param)
-        voices[guildID].play(source, after=lambda e: next_song(guildID))
-        updateTPlayer = guildID
+        if playableLink is not False:
+            playableLink = playableLink['link']
+            source = FFmpegPCMAudio(playableLink, **ffmpeg_param)
+            voices[guildID].play(source, after=lambda e: next_song(guildID))
+            updateTPlayer = guildID
+        else:
+            print("song no worky")
+            next_song(guildID)
 
     elif len(queues[guildID]) == 1:
         voices[guildID].stop()
@@ -412,7 +418,7 @@ async def resume(ctx):
 
 
 @client.command(pass_context=True)
-async def clear(ctx):
+async def clear(ctx=""):
     """
     Clears the queue.
 
@@ -614,6 +620,54 @@ async def burger(ctx):
     await ctx.send("🥬")
     await ctx.send("🥩")
     await ctx.send("🍞")
+
+@client.command(pass_context=True)
+async def join(ctx):
+    """
+    dwbi
+
+    :param ctx:
+    :return:
+    """
+
+    URL1 = "https://www.youtube.com/watch?v=jz40salowcc"
+
+    URL2 = "https://www.youtube.com/watch?v=2Gu7j5ZgZw4"
+
+    if ctx.author.voice:
+        channel = ctx.message.author.voice.channel
+        if not ctx.voice_client:
+            tempVoice = await channel.connect()
+
+            playableLink = GetUrl(URL1)['link']
+
+            source = FFmpegPCMAudio(playableLink, **ffmpeg_param)
+            tempVoice.play(source)
+            time.sleep(4.5)
+
+            await ctx.guild.voice_client.disconnect()
+        else:
+            global voices
+            global currentGuildID
+
+            await clear()
+            await next("")
+
+            playableLink = GetUrl(URL2)['link']
+
+            source = FFmpegPCMAudio(playableLink, **ffmpeg_param)
+            voices[currentGuildID].play(source)
+            time.sleep(10)
+
+            await ctx.guild.voice_client.disconnect()
+
+
+
+
+
+
+
+
 
 
 client.loop.create_task(toastPlayerCheck())
