@@ -254,7 +254,7 @@ async def toastPlayerCheck():
 
 
 @client.command(pass_context=True)
-async def next(ctx):
+async def next(ctx=""):
     """
     Plays the next song in the queue
 
@@ -623,6 +623,9 @@ async def burger(ctx):
 
 @client.command(pass_context=True)
 async def join(ctx):
+    global currentGuildID
+    global voices
+
     """
     dwbi
 
@@ -646,27 +649,17 @@ async def join(ctx):
             time.sleep(4.5)
 
             await ctx.guild.voice_client.disconnect()
-        else:
-            global voices
-            global currentGuildID
-
-            await clear()
-            await next("")
-
-            playableLink = GetUrl(URL2)['link']
-
-            source = FFmpegPCMAudio(playableLink, **ffmpeg_param)
-            voices[currentGuildID].play(source)
-            time.sleep(10)
-
-            await ctx.guild.voice_client.disconnect()
-
-
-
-
-
-
-
+        # else:
+        #     await clear()
+        #     await next()
+        #
+        #     playableLink = GetUrl(URL2)['link']
+        #
+        #     source = FFmpegPCMAudio(playableLink, **ffmpeg_param)
+        #     voices[currentGuildID].play(source)
+        #     time.sleep(3)
+        #
+        #     await ctx.guild.voice_client.disconnect()
 
 
 
