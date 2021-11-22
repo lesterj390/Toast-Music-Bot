@@ -201,7 +201,7 @@ def GetQueue(guildID):
 
     queueString = ""
 
-    if len(queues[guildID] > 1):
+    if len(queues[guildID]) > 1:
         queueString += "Queue\n"
 
     if (len(queues[guildID]) -1) >= 10:
