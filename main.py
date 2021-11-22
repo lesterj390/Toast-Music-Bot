@@ -199,7 +199,8 @@ def GetUrl(song: str):
 def GetQueue(guildID):
     global queues
 
-    queueString = "Queue:\n"
+    if len(queues[guildID] > 1):
+        queueString = "Queue:\n"
 
     if (len(queues[guildID]) -1) >= 10:
         for x in range(1, 11):
