@@ -199,8 +199,10 @@ def GetUrl(song: str):
 def GetQueue(guildID):
     global queues
 
+    queueString = ""
+
     if len(queues[guildID] > 1):
-        queueString = "Queue:\n"
+        queueString += "Queue\n"
 
     if (len(queues[guildID]) -1) >= 10:
         for x in range(1, 11):
@@ -213,7 +215,7 @@ def GetQueue(guildID):
     if (len(queues[guildID]) -1) > 10:
         queueString += f"...\n"
 
-    return (queueString)
+    return queueString
 
 
 async def UpdateToastPlayer(titlestr, queuestr, chatID):
