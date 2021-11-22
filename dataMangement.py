@@ -44,9 +44,11 @@ def GetChatID(serverData: list, targetGuildID):
     :param targetGuildID:
     :return:
     """
-    for x in serverData:
-        if (x['guildID'] == f'{targetGuildID}'):
-            return int(x['chatID'])
+
+    if serverData is not False:
+        for x in serverData:
+            if (x['guildID'] == f'{targetGuildID}'):
+                return int(x['chatID'])
 
     return False
 

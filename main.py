@@ -19,12 +19,14 @@ except:
 
 try:
     from boto.s3.connection import S3Connection
+
     s3 = S3Connection(os.environ['YTDEVKEY'], os.environ['BOTTOKEN'])
 
     YTDEVKEY = os.environ['YTDEVKEY']
     BOTTOKEN = os.environ['BOTTOKEN']
 except:
     pass
+
 
 def GetPlaylistUrls(url: str):
     query = parse_qs(urlparse(url).query, keep_blank_values=True)
@@ -80,9 +82,15 @@ def GetYTVidUrl(search: str):
     return f"https://www.youtube.com/watch?v={response['items'][0]['id']['videoId']}"
 
 
-client = commands.Bot(command_prefix='t')
+help_header = commands.DefaultHelpCommand(
+    no_category='Commands'
+)
+
+client = commands.Bot(command_prefix='t', help_command=help_header)
 
 queue = []
+
+queues = {}
 
 serverData = GetServerInfo()
 
@@ -93,6 +101,8 @@ updateTPlayer = False
 commandList = ["hello", "next", "play", "pause", "resume", "clear", "leave", "shuffle", "remove", "swap"]
 
 voice = ""
+
+voices = {}
 
 ydl_param = {
     'format': 'bestaudio',
@@ -123,11 +133,15 @@ async def on_message(message):
     global currentGuildID
     global commandList
 
-    global queue
+    global queues
 
     currentGuildID = message.channel.guild.id
     messageChatID = message.channel.id
     toastChatID = int(GetChatID(serverData, currentGuildID))
+
+    if currentGuildID not in queues:
+        queues[currentGuildID] = []
+
 
     # Testing for commands in custom channel
     if messageChatID == toastChatID and message.author.id != TOASTBOTID:
@@ -179,20 +193,22 @@ def GetUrl(song: str):
         return False
 
 
-def GetQueue():
-    global queue
+def GetQueue(guildID):
+    global queues
+
+    global currentGuildID
 
     queueString = "Queue:\n"
 
-    if len(range(1, len(queue))) >= 10:
+    if len(range(1, len(queues[guildID]))) >= 10:
         for x in range(1, 11):
-            queueString += f"{x}. {GetYTVidTitle(queue[x])}\n"
+            queueString += f"{x}. {GetYTVidTitle(queues[guildID][x])}\n"
 
     else:
-        for x in range(1, len(queue)):
-            queueString += f"{x}. {GetYTVidTitle(queue[x])}\n"
+        for x in range(1, len(queues[guildID])):
+            queueString += f"{x}. {GetYTVidTitle(queues[guildID][x])}\n"
 
-    if len(range(1, len(queue))) > 10:
+    if len(range(1, len(queues[guildID]))) > 10:
         queueString += f"...\n"
 
     return (queueString)
@@ -214,19 +230,18 @@ async def UpdateToastPlayer(titlestr, queuestr, chatID):
 
 
 async def toastPlayerCheck():
-    global queue
+    global queues
     global serverData
-    global currentGuildID
     global updateTPlayer
 
     await client.wait_until_ready()
 
     while True:
-        if updateTPlayer:
-            chatID = GetChatID(serverData, currentGuildID)
-            if len(queue) > 0:
-                title = GetYTVidTitle(queue[0])
-                qtitles = GetQueue()
+        if updateTPlayer is not False:
+            chatID = GetChatID(serverData, updateTPlayer)
+            if len(queues[updateTPlayer]) > 0:
+                title = GetYTVidTitle(queues[updateTPlayer][0])
+                qtitles = GetQueue(updateTPlayer)
                 await UpdateToastPlayer(title, qtitles, chatID)
             else:
                 channel = client.get_channel(chatID)
@@ -239,59 +254,69 @@ async def toastPlayerCheck():
 
 @client.command(pass_context=True)
 async def next(ctx):
-    global voice
-
-    voice.stop()
-
-
-def next_song():
     """
-    Plays the next song whether the command is called internally or
-    from chat and updates the queue accordingly.
+    Plays the next song in the queue
 
     :param ctx:
     :return:
     """
+    global voices
+    global currentGuildID
 
-    global queue
-    global voice
+    voices[currentGuildID].stop()
+
+
+def next_song(guildID):
+    """
+    Plays the next song whether the command is called internally or
+    from chat and updates the queue accordingly.
+
+    :param guildID:
+    :return:
+    """
 
     global serverData
     global currentGuildID
     global updateTPlayer
 
-    if len(queue) > 1:
-        queue.pop(0)
+    global voices
+    global queues
 
-        playableLink = GetUrl(queue[0])['link']
+    if len(queues[guildID]) > 1:
+        queues[guildID].pop(0)
+
+        playableLink = GetUrl(queues[guildID][0])['link']
 
         source = FFmpegPCMAudio(playableLink, **ffmpeg_param)
-        voice.play(source, after=lambda e: next_song())
-        updateTPlayer = True
+        voices[guildID].play(source, after=lambda e: next_song(guildID))
+        updateTPlayer = guildID
 
-    elif len(queue) == 1:
-        voice.stop()
-        queue.pop(0)
-        updateTPlayer = True
+    elif len(queues[guildID]) == 1:
+        voices[guildID].stop()
+        queues[guildID].pop(0)
+        updateTPlayer = guildID
 
 
-async def StartSong(ytlink):
+async def StartSong(ytlink, guildID):
     """
     Starts a song based on the currentSong parameter. If the given song is a playlist link,
     It calls "StartPlaylistSong".
 
+    :param guildID:
+    :param ytlink:
     :param currentSong:
     :return:
     """
 
-    global voice
+    global voices
     global updateTPlayer
 
     playableLink = GetUrl(ytlink)['link']
 
     source = FFmpegPCMAudio(playableLink, **ffmpeg_param)
-    voice.play(source, after=lambda e: next_song())
-    updateTPlayer = True
+    voices[guildID].play(source, after=lambda e: next_song(guildID))
+    updateTPlayer = guildID
+
 
 @client.command(pass_context=True)
 async def play(ctx, *args: str):
@@ -303,9 +328,11 @@ async def play(ctx, *args: str):
     :return:
     """
 
-    global voice
-    global queue
+    global voices
     global updateTPlayer
+
+    global queues
+    global currentGuildID
 
     songParam = ""
 
@@ -321,33 +348,32 @@ async def play(ctx, *args: str):
     if ctx.author.voice:
         channel = ctx.message.author.voice.channel
         if not ctx.voice_client:
-            voice = await channel.connect()
+            voices[currentGuildID] = await channel.connect()
 
         if "?list" in songParam:
             playlist = GetPlaylistUrls(songParam)
             for x in playlist:
-                queue.append(x)
+                queues[currentGuildID].append(x)
 
-            if len(playlist) == len(queue):
-                await StartSong(queue[0])
+            if len(playlist) == len(queues[currentGuildID]):
+                await StartSong(queues[currentGuildID][0], currentGuildID)
 
             else:
-                updateTPlayer = True
-
+                updateTPlayer = currentGuildID
 
         elif "?watch" in songParam:
-            queue.append(songParam)
+            queues[currentGuildID].append(songParam)
 
         else:
             myUrl = GetYTVidUrl(songParam)
             print(f"url: {myUrl}")
-            queue.append(myUrl)
+            queues[currentGuildID].append(myUrl)
 
-        if len(queue) == 1:
-            await StartSong(queue[0])
+        if len(queues[currentGuildID]) == 1:
+            await StartSong(queues[currentGuildID][0], currentGuildID)
 
         else:
-            updateTPlayer = True
+            updateTPlayer = currentGuildID
 
     else:
         await ctx.send("You're not in a voice channel ya goof")
@@ -387,20 +413,19 @@ async def resume(ctx):
 
 @client.command(pass_context=True)
 async def clear(ctx):
-    global updateTPlayer
-
     """
     Clears the queue.
 
     :param ctx:
     :return:
     """
+    global updateTPlayer
+    global currentGuildID
 
-    global queue
-    for x in range(1, len(queue)):
-        queue.pop(1)
+    for x in range(1, len(queues[currentGuildID])):
+        queues[currentGuildID].pop(1)
 
-    updateTPlayer = True
+    updateTPlayer = currentGuildID
 
 
 @client.command(pass_context=True)
@@ -412,9 +437,12 @@ async def leave(ctx):
     :return:
     """
 
+    global queues
+    global currentGuildID
+
     if ctx.voice_client:
         await ctx.guild.voice_client.disconnect()
-        queue = []
+        queues[currentGuildID] = []
     else:
         await ctx.send("I'm not in a voice channel ya goof")
 
@@ -474,7 +502,7 @@ async def setup(ctx):
         server['guildID'] = f'{guildID}'
         server['chatID'] = f'{channel.id}'
 
-        if (type(serverData) != type([])):
+        if type(serverData) != type([]):
             serverData = []
 
         serverData.append(server)
@@ -486,70 +514,101 @@ async def setup(ctx):
 @client.command(pass_context=True)
 async def shuffle(ctx, playlistLink=""):
     """
-    Shuffles the queue or plays shuffles a given playlist and adds it to queue.
+    Shuffles the queue or shuffle a given playlist and adds it to queue.
 
     :param ctx:
     :param playlistLink:
     :return:
     """
 
-    global queue
-    global voice
+    global voices
     global updateTPlayer
+
+    global queues
+    global currentGuildID
 
     if ctx.author.voice:
         channel = ctx.message.author.voice.channel
         if not ctx.voice_client:
-            voice = await channel.connect()
+            voices[currentGuildID] = await channel.connect()
 
     if playlistLink != "":
         playlist = GetPlaylistUrls(playlistLink)
         random.shuffle(playlist)
 
         for x in playlist:
-            queue.append(x)
+            queues[currentGuildID].append(x)
 
-        if len(playlist) == len(queue):
-            await StartSong(queue[0])
+        if len(playlist) == len(queues[currentGuildID]):
+            await StartSong(queues[currentGuildID][0], currentGuildID)
         else:
-            updateTPlayer = True
+            updateTPlayer = currentGuildID
 
 
     else:
-        tempqueue = queue[1:]
+        tempqueue = queues[currentGuildID][1:]
         random.shuffle(tempqueue)
 
         for x in range(0, len(tempqueue)):
-            queue.pop(1)
-            queue.insert(1, tempqueue[x])
+            queues[currentGuildID].pop(1)
+            queues[currentGuildID].insert(1, tempqueue[x])
 
-        updateTPlayer = True
+        updateTPlayer = currentGuildID
+
 
 @client.command(pass_context=True)
 async def remove(ctx, index):
-    global queue
+    """
+    Removes a specified song from the queue via queue number
+
+    :param ctx:
+    :param index:
+    :return:
+    """
+
     global updateTPlayer
 
+    global queues
+    global currentGuildID
+
     try:
-        queue.pop(int(index))
-        updateTPlayer = True
+        queues[currentGuildID].pop(int(index))
+        updateTPlayer = currentGuildID
     except:
         ctx.send("That number is not in the queue ya goof!")
 
+
 @client.command(pass_context=True)
-async def swap(ctx, index1 : int, index2 : int):
-    global queue
+async def swap(ctx, index1: int, index2: int):
+    """
+    Swaps two indexes of the queue
+
+    :param ctx:
+    :param index1:
+    :param index2:
+    :return:
+    """
+
     global updateTPlayer
 
+    global queues
+    global currentGuildID
+
     try:
-        queue[index1], queue[index2] = queue[index2], queue[index1]
-        updateTPlayer = True
+        queues[currentGuildID][index1], queues[currentGuildID][index2] = queues[currentGuildID][index2], queues[currentGuildID][index1]
+        updateTPlayer = currentGuildID
     except:
         ctx.send("I can't swap those ya goof!")
 
 
 @client.command(pass_context=True)
 async def burger(ctx):
+    """
+    Burger, nough' said
+
+    :param ctx:
+    :return:
+    """
     await ctx.send("🍞")
     await ctx.send("🍅")
     await ctx.send("🥬")
