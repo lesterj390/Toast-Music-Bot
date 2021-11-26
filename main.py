@@ -244,7 +244,7 @@ async def toastPlayerCheck():
         if type(serverData) is not type({'a' : 'b'}):
             serverData = GetServerInfo()
 
-        if updateTPlayer is not False and type(serverData) is type({'a': 'b'}):
+        if updateTPlayer is not False and type(serverData) is type([]):
             chatID = GetChatID(serverData, updateTPlayer)
             if len(queues[updateTPlayer]) > 0:
                 title = GetYTVidTitle(queues[updateTPlayer][0])

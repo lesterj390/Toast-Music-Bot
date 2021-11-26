@@ -34,4 +34,8 @@ def UploadServerData():
 
 
 def DownloadServerData():
-    repo.git.checkout('HEAD', '--', 'serverData.dat')
+    try:
+        repo.git.checkout('HEAD', '--', 'serverData.dat')
+        return True
+    except:
+        return False

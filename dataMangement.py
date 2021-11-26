@@ -26,7 +26,8 @@ def GetServerInfo():
     :return serverData:
     """
 
-    DownloadServerData()
+    if DownloadServerData() is False:
+        return False
 
     if not os.path.isfile(os.path.join(PATH, "serverData.dat")):
         file = open(os.path.join(PATH, "serverData.dat"), "x")
