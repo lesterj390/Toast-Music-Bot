@@ -1,6 +1,8 @@
 import os
 import pickle
 
+from githubManagement import *
+
 
 def SaveServerInfo(serverData):
     """
@@ -9,8 +11,12 @@ def SaveServerInfo(serverData):
     :param serverData:
     :return:
     """
-    with open("ServerData.dat", "wb") as file:
+    with open(os.path.join(PATH, "serverData.dat"), "wb") as file:
         pickle.dump(serverData, file)
+
+    UploadServerData()
+
+
 
 
 def GetServerInfo():
@@ -20,16 +26,18 @@ def GetServerInfo():
     :return serverData:
     """
 
-    if not os.path.isfile("ServerData.dat"):
-        file = open("ServerData.dat", "x")
+    DownloadServerData()
+
+    if not os.path.isfile(os.path.join(PATH, "serverData.dat")):
+        file = open(os.path.join(PATH, "serverData.dat"), "x")
         file.close()
     else:
-        file = open("ServerData.dat", "rb")
+        file = open(os.path.join(PATH, "serverData.dat"), "rb")
 
     try:
         serverData = pickle.load(file)
-    except:
         file.close()
+    except:
         return False
 
     return serverData
