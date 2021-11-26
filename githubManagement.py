@@ -7,7 +7,7 @@ except:
     pass
 
 GHTOKEN = ""
-GHTOKEN = os.environ['GHTOKEN']
+GHTOKEN = os.getenv('GHTOKEN')
 
 
 LINK = f"https://lesterj390:{GHTOKEN}@github.com/lesterj390/Toast-Bot.git"
