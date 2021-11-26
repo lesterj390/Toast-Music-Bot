@@ -2,12 +2,14 @@ import os
 import git
 
 try:
-    from apikeys import *
+    GHTOKEN = os.getenv('GHTOKEN')
 except:
     pass
 
-GHTOKEN = ""
-GHTOKEN = os.getenv('GHTOKEN')
+try:
+    from apikeys import *
+except:
+    pass
 
 
 LINK = f"https://lesterj390:{GHTOKEN}@github.com/lesterj390/Toast-Bot.git"

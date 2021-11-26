@@ -14,16 +14,13 @@ from dataMangement import *
 import os
 
 try:
-    from apikeys import *
+    YTDEVKEY = os.getenv('YTDEVKEY')
+    BOTTOKEN = os.getenv('BOTTOKEN')
 except:
     pass
 
 try:
-    from boto.s3.connection import S3Connection
-
-    s3 = S3Connection(os.environ['YTDEVKEY'], os.environ['BOTTOKEN'])
-    YTDEVKEY = os.environ['YTDEVKEY']
-    BOTTOKEN = os.environ['BOTTOKEN']
+    from apikeys import *
 except:
     pass
 
