@@ -26,6 +26,7 @@ pyasn1-modules==0.3.0
 pycparser==2.21
 pyparsing==3.0.9
 pytube==15.0.0
+pynacl
 requests==2.30.0
 rsa==4.9
 six==1.16.0
