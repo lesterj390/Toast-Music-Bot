@@ -7,3 +7,5 @@
 /venvold/
 /log.bat
 /test.py
+/__pycache__/
+*.exe
