@@ -7,6 +7,7 @@ from discord import FFmpegPCMAudio
 from pytube import YouTube
 from pytube.exceptions import *
 import random
+import io
 
 from dataMangement import *
 
@@ -108,8 +109,7 @@ voice = ""
 voices = {}
 
 ffmpeg_param = {
-    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-    'options': '-vn'
+    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'
 }
 
 TOASTBOTID = 906763140748959774
@@ -275,6 +275,7 @@ def dequeue(guildID):
 
             playableLink = YouTube(nextYouTubeLink, use_oauth=False)
             playableLink = playableLink.streams.get_audio_only().url
+            print(playableLink)
 
             source = FFmpegPCMAudio(playableLink, **ffmpeg_param)
 
