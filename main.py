@@ -109,7 +109,7 @@ voice = ""
 voices = {}
 
 ffmpeg_param = {
-    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5'
+    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 500'
 }
 
 TOASTBOTID = 906763140748959774
