@@ -119,7 +119,6 @@ TOASTBOTID = 906763140748959774
 async def on_ready():
     print("The bot is now ready for use")
     print("----------------------------")
-    YouTube("https://www.youtube.com/watch?v=dQw4w9WgXcQ", use_oauth=True, allow_oauth_cache=True)
     # toastPlayerCheck.start()
     # client.loop.create_task(toastPlayerCheck())
     # toastPlayerCheck.start()
@@ -274,7 +273,7 @@ def dequeue(guildID):
 
             client.loop.create_task(UpdateToastPlayer(guildID))
 
-            playableLink = YouTube(nextYouTubeLink, use_oauth=True, allow_oauth_cache=True)
+            playableLink = YouTube(nextYouTubeLink, use_oauth=False)
             playableLink = playableLink.streams.get_audio_only().url
 
             source = FFmpegPCMAudio(playableLink, **ffmpeg_param)
