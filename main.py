@@ -1,10 +1,14 @@
+import subprocess
+
+import pytube.query
 from googleapiclient.discovery import build
 from urllib.parse import parse_qs, urlparse
 import discord
 from discord.ext import commands
 from discord.ext import tasks
-from discord import FFmpegPCMAudio
+from discord import FFmpegPCMAudio, FFmpegOpusAudio
 from pytube import YouTube
+from pydub import AudioSegment
 from pytube.exceptions import *
 import random
 import io
@@ -102,7 +106,7 @@ startupDB.conn.close()
 
 currentGuildID = 0
 
-commandList = ["next", "play", "pause", "resume", "clear", "leave", "shuffle", "remove", "swap"]
+commandList = ["next", "play", "pause", "resume", "clear", "leave", "shuffle", "remove", "swap", "testFunc"]
 
 voice = ""
 
@@ -145,7 +149,7 @@ async def on_message(message):
         # Adding prefix to message
         if not message.content.startswith(tuple(commandList)):
             message.content = f"tplay {message.content}"
-        elif not message.content.startswith("t"):
+        else:
             message.content = f"t{message.content}"
         await message.channel.purge(limit=1)
 
@@ -245,6 +249,36 @@ async def next(ctx=""):
     global currentGuildID
 
     voices[currentGuildID].stop()
+
+
+def toBytesIO(stream: pytube.query.Stream):
+    buffer = io.BytesIO()
+
+    bytes_remaining = stream.filesize
+
+    for chunk in pytube.request.stream(stream.url):
+        bytes_remaining -= len(chunk)
+        stream.on_progress(chunk, buffer, bytes_remaining)
+    buffer.seek(0, io.SEEK_SET)
+    return buffer
+
+
+@client.command(pass_context=True)
+async def testFunc(ctx):
+    bufferIn = io.BytesIO()
+    test = YouTube("https://www.youtube.com/watch?v=dQw4w9WgXcQ").streams.get_audio_only()
+    print("codec", test.audio_codec)
+    buffer = toBytesIO(test)
+
+    # converter = AudioSegment.from_file(bufferIn, format="mp4")
+    # # Load the WAV data using PyDub
+    # bufferOut = converter.export(format="wav")
+    # print(type(bufferOut))
+
+    source = FFmpegOpusAudio(buffer, pipe=True)
+    voice = await ctx.message.author.voice.channel.connect()
+    voice.play(source)
+    # source = await FFmpegOpusAudio.from_probe("currentSong", method="fallback")
 
 
 def dequeue(guildID):
