@@ -1,14 +1,9 @@
-import subprocess
-
-import pytube.query
 from googleapiclient.discovery import build
 from urllib.parse import parse_qs, urlparse
 import discord
 from discord.ext import commands
-from discord.ext import tasks
 from discord import FFmpegPCMAudio, FFmpegOpusAudio
 from pytube import YouTube
-from pydub import AudioSegment
 from pytube.exceptions import *
 import random
 import io
@@ -106,15 +101,9 @@ startupDB.conn.close()
 
 currentGuildID = 0
 
-commandList = ["next", "play", "pause", "resume", "clear", "leave", "shuffle", "remove", "swap", "testFunc"]
-
-voice = ""
+commandList = ["next", "play", "pause", "resume", "clear", "leave", "shuffle", "remove", "swap"]
 
 voices = {}
-
-ffmpeg_param = {
-    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 4000'
-}
 
 TOASTBOTID = 906763140748959774
 
@@ -251,36 +240,6 @@ async def next(ctx=""):
     voices[currentGuildID].stop()
 
 
-def toBytesIO(stream: pytube.query.Stream):
-    buffer = io.BytesIO()
-
-    bytes_remaining = stream.filesize
-
-    for chunk in pytube.request.stream(stream.url):
-        bytes_remaining -= len(chunk)
-        stream.on_progress(chunk, buffer, bytes_remaining)
-    buffer.seek(0, io.SEEK_SET)
-    return buffer
-
-
-@client.command(pass_context=True)
-async def testFunc(ctx):
-    bufferIn = io.BytesIO()
-    test = YouTube("https://www.youtube.com/watch?v=dQw4w9WgXcQ").streams.get_audio_only()
-    print("codec", test.audio_codec)
-    buffer = toBytesIO(test)
-
-    # converter = AudioSegment.from_file(bufferIn, format="mp4")
-    # # Load the WAV data using PyDub
-    # bufferOut = converter.export(format="wav")
-    # print(type(bufferOut))
-
-    source = FFmpegOpusAudio(buffer, pipe=True)
-    voice = await ctx.message.author.voice.channel.connect()
-    voice.play(source)
-    # source = await FFmpegOpusAudio.from_probe("currentSong", method="fallback")
-
-
 def dequeue(guildID):
     """
     Removes a song from the queue and plays it.
@@ -308,10 +267,14 @@ def dequeue(guildID):
             client.loop.create_task(UpdateToastPlayer(guildID))
 
             playableLink = YouTube(nextYouTubeLink, use_oauth=False)
-            playableLink = playableLink.streams.get_audio_only().url
-            print(playableLink)
+            playableLink = playableLink.streams.get_audio_only()
+            buffer = io.BytesIO()
 
-            source = FFmpegPCMAudio(playableLink, **ffmpeg_param)
+            # Stream the song to the buffer
+            playableLink.stream_to_buffer(buffer)
+            buffer.seek(0) # IMPORTANT, after the stream_to_buffer function, the buffer is at EOF so seek to 0
+
+            source = FFmpegOpusAudio(buffer, pipe=True)
 
             voices[guildID].play(source, after=songFinishLambda)
         except AgeRestrictedError:
@@ -578,33 +541,6 @@ async def burger(ctx):
     await ctx.send("🥬")
     await ctx.send("🥩")
     await ctx.send("🍞")
-
-
-@client.command(pass_context=True)
-async def join(ctx):
-    global currentGuildID
-    global voices
-
-    """
-    dwbi
-
-    :param ctx:
-    :return:
-    """
-
-    URL1 = "https://www.youtube.com/watch?v=jz40salowcc"
-
-    URL2 = "https://www.youtube.com/watch?v=2Gu7j5ZgZw4"
-
-    if ctx.author.voice:
-        channel = ctx.message.author.voice.channel
-        if not ctx.voice_client:
-            tempVoice = await channel.connect()
-
-            playableLink = YouTube(URL1).streams.get_audio_only().url
-
-            source = FFmpegPCMAudio(playableLink, **ffmpeg_param)
-            tempVoice.play(source)
 
 
 client.run(BOTTOKEN)
