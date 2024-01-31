@@ -1,0 +1,1 @@
+This project was to create a music bot for discord to play requested songs on YouTube via their API and FFMPEG. It is no longer in use due to YouTube's new terms and services which disallow YouTube Discord bots.
